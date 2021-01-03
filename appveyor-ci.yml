@@ -1,0 +1,68 @@
+image: Visual Studio 2017
+
+
+clone_depth: 1
+
+
+
+environment:
+  BUILD: 
+
+
+  matrix:
+    - Platform: windows_msvc2017_desktop_x86
+    # - Platform: windows_msvc2017_desktop_x64
+
+
+
+artifacts:
+  - path: '**\*libretro.dll'
+  - path: '**\*libretro.pdb'
+
+
+
+
+build_script:
+
+  - ps: |
+      $env:VC2017_VERSION = Get-Content -Path "C:\Program Files (x86)\Microsoft Visual Studio\2017\Community\VC\Auxiliary\Build\Microsoft.VCToolsVersion.default.txt"
+
+
+  - cmd: |
+      cd "C:\Program Files (x86)\Windows Kits\10\Include"
+      for /d %%d in ("10.*") do set SDK_VERSION=%%d
+      cd %APPVEYOR_BUILD_FOLDER%
+
+      set VC2017_DIR=C:\Program Files (x86)\Microsoft Visual Studio\2017\Community\VC\Tools\MSVC\%VC2017_VERSION%
+      set VC2017_SDK_INC=C:\Program Files (x86)\Windows Kits\10\Include\%SDK_VERSION%
+      set VC2017_SDK_LIB=C:\Program Files (x86)\Windows Kits\10\Lib\%SDK_VERSION%
+
+
+      xcopy "%VC2017_SDK_INC%\shared" "%VC2017_DIR%\Include" /K /D /H /Y /s /e /q
+      xcopy "%VC2017_SDK_INC%\ucrt" "%VC2017_DIR%\Include" /K /D /H /Y /s /e /q
+      xcopy "%VC2017_SDK_INC%\um" "%VC2017_DIR%\Include" /K /D /H /Y /s /e /q
+
+      xcopy "%VC2017_SDK_LIB%\ucrt\x86" "%VC2017_DIR%\Lib\x86" /K /D /H /Y /s /e /q
+      xcopy "%VC2017_SDK_LIB%\ucrt\x64" "%VC2017_DIR%\Lib\x64" /K /D /H /Y /s /e /q
+      xcopy "%VC2017_SDK_LIB%\ucrt\arm" "%VC2017_DIR%\Lib\arm" /K /D /H /Y /s /e /q
+      xcopy "%VC2017_SDK_LIB%\ucrt\arm64" "%VC2017_DIR%\Lib\arm64" /K /D /H /Y /s /e /q
+
+      xcopy "%VC2017_SDK_LIB%\um\x86" "%VC2017_DIR%\Lib\x86" /K /D /H /Y /s /e /q
+      xcopy "%VC2017_SDK_LIB%\um\x64" "%VC2017_DIR%\Lib\x64" /K /D /H /Y /s /e /q
+      xcopy "%VC2017_SDK_LIB%\um\arm" "%VC2017_DIR%\Lib\arm" /K /D /H /Y /s /e /q
+      xcopy "%VC2017_SDK_LIB%\um\arm64" "%VC2017_DIR%\Lib\arm64" /K /D /H /Y /s /e /q
+
+
+      git submodule update --init --recursive
+
+
+
+  ############################################
+
+
+
+  - cmd: |
+      set Path=C:\msys64\usr\bin;%Path%
+
+      cd %BUILD%
+      cmake . -DPLAYER_TARGET_PLATFORM=libretro -DBUILD_SHARED_LIBS=OFF
